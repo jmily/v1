@@ -102,6 +102,8 @@ class Sensor
         $this->reportTime = $reportTime;
     }
 
+
+
     /**
      * @return mixed
      */

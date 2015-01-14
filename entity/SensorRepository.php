@@ -31,7 +31,7 @@ class SensorRepository
     {
         $link = Database::DbConnection();
         $endAt = $from_time + $duration_time;
-        $query = "SELECT * FROM sensor WHERE reportTime > $from_time AND reportTime < $endAt";
+        $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt";
         $result = $link->query($query) or die($link->error.__LINE__);
         $sensors = null;
         while($row = $result->fetch_assoc())
@@ -63,6 +63,30 @@ class SensorRepository
         }
         Database::ConnectionClose($link);
         return $s;
+    }
+
+    public function getSensorByValueTime($from_time,$duration_time,$sensorValue)
+    {
+        $link = Database::DbConnection();
+        $endAt = $from_time + $duration_time;
+        $sensorId = $sensorValue->getSensorId();
+        $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $s = null;
+        $values[] = $sensorValue;
+        while($row = $result->fetch_assoc())
+        {
+            $sensor = new Sensor();
+            $sensor->setSensorId($row['sensorId']);
+            $sensor->setLongitude($row['longitude']);
+            $sensor->setLatitude($row['latitude']);
+            $sensor->setReportTime($row['reportTime']);
+            $sensor->setSensorValues($values);
+            $s = $sensor;
+        }
+        Database::ConnectionClose($link);
+        return $s;
+
     }
 
 
@@ -102,6 +126,27 @@ class SensorRepository
         }
         Database::ConnectionClose($link);
         return $name;
+    }
+
+    public function getSensorByIdTime($from_time,$duration_time,$sensorId)
+    {
+        $link = Database::DbConnection();
+        $endAt = $from_time + $duration_time;
+        $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $s = null;
+
+        while($row = $result->fetch_assoc())
+        {
+            $sensor = new Sensor();
+            $sensor->setSensorId($row['sensorId']);
+            $sensor->setLongitude($row['longitude']);
+            $sensor->setLatitude($row['latitude']);
+            $sensor->setReportTime($row['reportTime']);
+            $s = $sensor;
+        }
+        Database::ConnectionClose($link);
+        return $s;
     }
 
 }
