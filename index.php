@@ -65,7 +65,6 @@ $app->get('/sensors/:sensorId/', function ($sensorId) {
     }
 });
 
-
 $app->get('/:streamId/values/', function ($streamId) use ($app) {
     date_default_timezone_set('Australia/Melbourne');
     if($streamId == 0) {
@@ -73,6 +72,7 @@ $app->get('/:streamId/values/', function ($streamId) use ($app) {
         $from_time = $request->get('from_time');
         $duration_time = $request->get('duration_time');
         $to_time = $request->get('to_time');
+        $date = $request->get('date');
 
         $hour = date('G') * 3600;
         $minute = date('i') * 60;
@@ -94,7 +94,7 @@ $app->get('/:streamId/values/', function ($streamId) use ($app) {
             $duration_time = $to_time - $from_time;
         }
             $sensorRepository = new SensorRepository();
-            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time);
+            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time,$date);
             if($allSensors == null)
             {
                 echo "no data found during the time period...";
@@ -113,7 +113,8 @@ $app->get('/:streamId/values/', function ($streamId) use ($app) {
                     }
 
                     $output[] = array(
-                        "time" => $sensor->getReportTime(),
+                        "date" => $sensor->getReportDate(),
+                        "time" => (int)$sensor->getReportTime(),
                         "sensorId" => $sensor->getSensorId(),
                         "values" => (object)$valueOutput
                     );
@@ -132,10 +133,6 @@ $app->get('/:streamId/values/', function ($streamId) use ($app) {
 
 });
 
-
-
-
-
 $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app) {
     date_default_timezone_set('Australia/Melbourne');
     if($streamId == 0) {
@@ -143,6 +140,7 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
         $from_time = $request->get('from_time');
         $duration_time = $request->get('duration_time');
         $to_time = $request->get('to_time');
+        $date = $request->get('date');
 
         $hour = date('G') * 3600;
         $minute = date('i') * 60;
@@ -169,7 +167,7 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
         if($measure == "allMeasures" )
         {
             $sensorRepository = new SensorRepository();
-            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time);
+            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time,$date);
 
             if($allSensors == null)
             {
@@ -189,7 +187,8 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
                     }
 
                     $output[] = array(
-                        "time" => $sensor->getReportTime(),
+                        "date" => $sensor->getReportDate(),
+                        "time" => (int)$sensor->getReportTime(),
                         "sensorId" => $sensor->getSensorId(),
                         "values" => (object)$valueOutput
                     );
@@ -217,7 +216,7 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
             {
                 foreach($sensorValues as $sensorValue)
                 {
-                    $sensor = $sensorRepository->getSensorByValueTime($from_time,$duration_time,$sensorValue);
+                    $sensor = $sensorRepository->getSensorByValueTime($from_time,$duration_time,$date,$sensorValue);
                     if($sensor != null)
                     {
                         $sensors[] = $sensor;
@@ -244,7 +243,8 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
                         if($valueOutput !=null)
                         {
                             $output[] = array(
-                                "time" => $sensor->getReportTime(),
+                                "date" => $sensor->getReportDate(),
+                                "time" => (int)$sensor->getReportTime(),
                                 "sensorId" => $sensor->getSensorId(),
                                 "values" => (object)$valueOutput
                             );
@@ -280,7 +280,6 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
 
 });
 
-
 $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,$sensorId) use ($app) {
     date_default_timezone_set('Australia/Melbourne');
     if($streamId == 0) {
@@ -288,6 +287,7 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
         $from_time = $request->get('from_time');
         $duration_time = $request->get('duration_time');
         $to_time = $request->get('to_time');
+        $date = $request->get('date');
 
         $hour = date('G') * 3600;
         $minute = date('i') * 60;
@@ -313,7 +313,7 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
         {
             $sensorRepository = new SensorRepository();
             $sensorValueRepository = new SensorValueRepository();
-            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$sensorId);
+            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$date,$sensorId);
             if($sensor != null) {
                 $values = $sensorValueRepository->getAllSensorValueBySensor($sensor);
                 $sensor->setSensorValues($values);
@@ -326,7 +326,8 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
                 }
 
                 $output[] = array(
-                    "time" => $sensor->getReportTime(),
+                    "date" => $sensor->getReportDate(),
+                    "time" => (int)$sensor->getReportTime(),
                     "sensorId" => $sensor->getSensorId(),
                     "values" => (object)$valueOutput
                 );
@@ -349,7 +350,7 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
             $sensorRepository = new SensorRepository();
             $measureRepository = new MeasureRepository();
             $sensorValueRepository = new SensorValueRepository();
-            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$sensorId);
+            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$date,$sensorId);
             if($sensor != null)
             {
                 $m = $measureRepository->getMeasureByName($measure);
@@ -370,7 +371,8 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
                     if($valueOutput !=null)
                     {
                         $output[] = array(
-                            "time" => $sensor->getReportTime(),
+                            "date" => $sensor->getReportDate(),
+                            "time" => (int)$sensor->getReportTime(),
                             "sensorId" => $sensor->getSensorId(),
                             "values" => (object)$valueOutput
                         );
