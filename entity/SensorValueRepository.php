@@ -77,4 +77,20 @@ class SensorValueRepository
 
     }
 
+    public function insertSensorValue($sensorId,$measureId,$dataValue)
+    {
+        $link = Database::DbConnection();
+        $query = "INSERT INTO sensor_value VALUES('','$sensorId',$measureId,$dataValue)";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $success = FALSE;
+        if($link->affected_rows > 0)
+        {
+            $success = TRUE;
+        }
+
+        Database::ConnectionClose($link);
+        return $success;
+
+    }
+
 }

@@ -8,6 +8,11 @@
 
 class SensorRepository
 {
+
+
+    /**
+     * @return array|null
+     */
     public function getAllSensors()
     {
         $link = Database::DbConnection();
@@ -27,6 +32,12 @@ class SensorRepository
         return $sensors;
     }
 
+    /**
+     * @param $from_time
+     * @param $duration_time
+     * @param $date
+     * @return array|null
+     */
     public function getAllSensorsByTime($from_time,$duration_time,$date)
     {
         $link = Database::DbConnection();
@@ -55,6 +66,10 @@ class SensorRepository
         return $sensors;
     }
 
+    /**
+     * @param $sensorId
+     * @return null|Sensor
+     */
     public function getSensorById($sensorId)
     {
         $link = Database::DbConnection();
@@ -73,6 +88,13 @@ class SensorRepository
         return $s;
     }
 
+    /**
+     * @param $from_time
+     * @param $duration_time
+     * @param $date
+     * @param $sensorValue
+     * @return null|Sensor
+     */
     public function getSensorByValueTime($from_time,$duration_time,$date,$sensorValue)
     {
         $link = Database::DbConnection();
@@ -106,6 +128,10 @@ class SensorRepository
     }
 
 
+    /**
+     * @param $sensor
+     * @return array|null
+     */
     public function getSensorValues($sensor)
     {
         $link = Database::DbConnection();
@@ -129,6 +155,10 @@ class SensorRepository
 
     }
 
+    /**
+     * @param $measureId
+     * @return null
+     */
     public static function getMeasureById($measureId)
     {
         $link = Database::DbConnection();
@@ -144,6 +174,13 @@ class SensorRepository
         return $name;
     }
 
+    /**
+     * @param $from_time
+     * @param $duration_time
+     * @param $date
+     * @param $sensorId
+     * @return null|Sensor
+     */
     public function getSensorByIdTime($from_time,$duration_time,$date,$sensorId)
     {
         $link = Database::DbConnection();
@@ -171,6 +208,30 @@ class SensorRepository
         }
         Database::ConnectionClose($link);
         return $s;
+    }
+
+    /**
+     * @param $sensor
+     * @return bool
+     */
+    public function insertSensor($sensor)
+    {
+        $link = Database::DbConnection();
+        $sensorId = $sensor->getSensorId();
+        $longitude = $sensor->getLongitude();
+        $latitude = $sensor->getLatitude();
+        $reportDate = $sensor->getReportDate();
+        $reportTime = $sensor->getReportTime();
+        $query = "INSERT INTO sensor VALUES('$sensorId',$longitude,$latitude,'$reportDate',$reportTime)";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $success = FALSE;
+        if($link->affected_rows > 0)
+        {
+            $success = TRUE;
+        }
+
+        Database::ConnectionClose($link);
+        return $success;
     }
 
 }

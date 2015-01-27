@@ -42,4 +42,21 @@ class MeasureRepository
         return $m;
 
     }
+
+    public function insertMeasure($name)
+    {
+        $link = Database::DbConnection();
+
+        $query = "INSERT INTO measure VALUES('','$name')";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $success = FALSE;
+        if($link->affected_rows > 0)
+        {
+            $success = TRUE;
+        }
+
+        Database::ConnectionClose($link);
+        return $success;
+
+    }
 }
