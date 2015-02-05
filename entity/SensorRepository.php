@@ -10,6 +10,34 @@ class SensorRepository
 {
 
 
+    public function getDates()
+    {
+        $link = Database::DbConnection();
+        $query = "SELECT DISTINCT reportDate FROM sensor_value ORDER BY reportDate DESC";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $dates = null;
+        while($row = $result->fetch_assoc())
+        {
+            $dates[] = $row['reportDate'];
+        }
+        Database::ConnectionClose($link);
+        return $dates;
+    }
+
+    public function getTimesByDate($date)
+    {
+        $link = Database::DbConnection();
+        $query = "SELECT DISTINCT reportTime FROM sensor_value WHERE reportDate='$date' ";
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $times = null;
+        while($row = $result->fetch_assoc())
+        {
+            $times[] = $row['reportTime'];
+        }
+        Database::ConnectionClose($link);
+        return $times;
+    }
+
     /**
      * @return array|null
      */
@@ -25,7 +53,6 @@ class SensorRepository
             $sensor->setSensorId($row['sensorId']);
             $sensor->setLongitude($row['longitude']);
             $sensor->setLatitude($row['latitude']);
-            $sensor->setReportTime($row['reportTime']);
             $sensors[] = $sensor;
         }
         Database::ConnectionClose($link);
@@ -44,7 +71,7 @@ class SensorRepository
         $endAt = $from_time + $duration_time;
         if($date == null)
         {
-          $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND reportDate IS NOT NULL";
+            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND reportDate IS NOT NULL";
         }
         else
         {
@@ -58,8 +85,6 @@ class SensorRepository
             $sensor->setSensorId($row['sensorId']);
             $sensor->setLongitude($row['longitude']);
             $sensor->setLatitude($row['latitude']);
-            $sensor->setReportDate($row['reportDate']);
-            $sensor->setReportTime($row['reportTime']);
             $sensors[] = $sensor;
         }
         Database::ConnectionClose($link);
@@ -73,7 +98,7 @@ class SensorRepository
     public function getSensorById($sensorId)
     {
         $link = Database::DbConnection();
-        $query = "SELECT * FROM sensor WHERE sensorId = $sensorId";
+        $query = "SELECT * FROM sensor WHERE sensorId = '$sensorId'";
         $result = $link->query($query) or die($link->error.__LINE__);
         $s = null;
         while($row = $result->fetch_assoc())
@@ -95,30 +120,21 @@ class SensorRepository
      * @param $sensorValue
      * @return null|Sensor
      */
-    public function getSensorByValueTime($from_time,$duration_time,$date,$sensorValue)
+    public function getSensorByValue($sensorValue)
     {
         $link = Database::DbConnection();
-        $endAt = $from_time + $duration_time;
         $sensorId = $sensorValue->getSensorId();
-        if($date == null)
-        {
-            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId AND reportDate IS NOT NULL";
-        }
-        else
-        {
-            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId AND reportDate ='$date'";
-        }
+        $query = "SELECT * FROM sensor WHERE sensorId='$sensorId'";
         $result = $link->query($query) or die($link->error.__LINE__);
         $s = null;
         $values[] = $sensorValue;
+
         while($row = $result->fetch_assoc())
         {
             $sensor = new Sensor();
-            $sensor->setReportDate($row['reportDate']);
             $sensor->setSensorId($row['sensorId']);
             $sensor->setLongitude($row['longitude']);
             $sensor->setLatitude($row['latitude']);
-            $sensor->setReportTime($row['reportTime']);
             $sensor->setSensorValues($values);
             $s = $sensor;
         }
@@ -136,7 +152,7 @@ class SensorRepository
     {
         $link = Database::DbConnection();
         $sensorId = $sensor->getSensorId();
-        $query = "SELECT * FROM sensor_value WHERE sensorId = $sensorId";
+        $query = "SELECT * FROM sensor_value WHERE sensorId = '$sensorId'";
         $result = $link->query($query) or die($link->error.__LINE__);
         $values = null;
         while($row = $result->fetch_assoc())
@@ -147,6 +163,33 @@ class SensorRepository
             $value->setSensorId($sensorId);
             $value->setDataValue($row['dataValue']);
             $value->setMeasureId($row['measureId']);
+            $value->setMeasureName($measureName);
+            $values[] = $value;
+        }
+        Database::ConnectionClose($link);
+        return $values;
+
+    }
+
+    public function getSensorValuesByDateTime($sensor,$date,$time)
+    {
+        $link = Database::DbConnection();
+        $sensorId = $sensor->getSensorId();
+
+        $query = "SELECT * FROM sensor_value WHERE sensorId = '$sensorId' AND reportTime = $time AND reportDate='$date' ";
+
+        $result = $link->query($query) or die($link->error.__LINE__);
+        $values = null;
+        while($row = $result->fetch_assoc())
+        {
+
+            $measureName = SELF::getMeasureById($row['measureId']);
+            $value = new SensorValue();
+            $value->setSensorId($sensorId);
+            $value->setDataValue($row['dataValue']);
+            $value->setMeasureId($row['measureId']);
+            $value->setReportDate($row['reportDate']);
+            $value->setReportTime($row['reportTime']);
             $value->setMeasureName($measureName);
             $values[] = $value;
         }
@@ -168,7 +211,7 @@ class SensorRepository
         $name = null;
         while($row = $result->fetch_assoc())
         {
-           $name = $row['name'];
+            $name = $row['name'];
         }
         Database::ConnectionClose($link);
         return $name;
@@ -187,11 +230,11 @@ class SensorRepository
         $endAt = $from_time + $duration_time;
         if($date == null)
         {
-            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId AND reportDate IS NOT NULL";
+            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId='$sensorId' AND reportDate IS NOT NULL";
         }
         else
         {
-            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId=$sensorId AND reportDate='$date'";
+            $query = "SELECT * FROM sensor WHERE reportTime >= $from_time AND reportTime <= $endAt AND sensorId='$sensorId' AND reportDate='$date'";
         }
         $result = $link->query($query) or die($link->error.__LINE__);
         $s = null;
@@ -220,9 +263,7 @@ class SensorRepository
         $sensorId = $sensor->getSensorId();
         $longitude = $sensor->getLongitude();
         $latitude = $sensor->getLatitude();
-        $reportDate = $sensor->getReportDate();
-        $reportTime = $sensor->getReportTime();
-        $query = "INSERT INTO sensor VALUES('$sensorId',$longitude,$latitude,'$reportDate',$reportTime)";
+        $query = "INSERT INTO sensor VALUES('$sensorId',$longitude,$latitude)";
         $result = $link->query($query) or die($link->error.__LINE__);
         $success = FALSE;
         if($link->affected_rows > 0)

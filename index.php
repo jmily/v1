@@ -94,38 +94,79 @@ $app->get('/:streamId/values/', function ($streamId) use ($app) {
         {
             $duration_time = $to_time - $from_time;
         }
-            $sensorRepository = new SensorRepository();
-            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time,$date);
-            if($allSensors == null)
-            {
-                echo "no data found during the time period...";
-            }
-            else {
-                $output = null;
-                foreach ($allSensors as $sensor) {
-                    $values = $sensorRepository->getSensorValues($sensor);
-                    $sensor->setSensorValues($values);
+        $endAt = $from_time + $duration_time;
 
-                    $valueOutput = null;
-                    foreach ($sensor->getSensorValues() as $value) {
-                        $key = $value->getMeasureName();
-                        $valueOutput[$key] = (double)$value->getDataValue();
+        $sensorRepository = new SensorRepository();
+        $allSensors = $sensorRepository->getAllSensors();
+
+        if($allSensors == null)
+        {
+            echo "no data found during the time period...";
+        }
+        else {
+            $output = null;
+            foreach ($allSensors as $sensor) {
+                $dateList = $sensorRepository->getDates();
+
+                foreach($dateList as $day)
+                {
+                    $times = $sensorRepository->getTimesByDate($day);
+                    foreach($times as $time)
+                    {
+                        $values = $sensorRepository->getSensorValuesByDateTime($sensor,$day,$time);
+                        $sensor->setSensorValues($values);
+                        if($sensor->getSensorValues() != null)
+                        {
+                            $valueOutput = null;
+                            foreach($sensor->getSensorValues() as $value)
+                            {
+                                $key = $value->getMeasureName();
+
+                                $reportTime = $value->getReportTime();
+
+
+                                if( ($reportTime <= $endAt) && ($reportTime >= $from_time))
+                                {
+                                    $valueOutput[$key] = (double)$value->getDataValue();
+                                }
+
+                            }
+
+                            if($valueOutput != null)
+                            {
+                                if($date != null)
+                                {
+                                    if($day == $date)
+                                    {
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                    }
+                                }
+                                else
+                                {
+                                    $output[] = array(
+                                        "date" => $day,
+                                        "time" => (int)$time,
+                                        "sensorId" => $sensor->getSensorId(),
+                                        "values" => (object)$valueOutput
+                                    );
+                                }
+                            }
+                        }
 
                     }
-
-                    $output[] = array(
-                        "date" => $sensor->getReportDate(),
-                        "time" => (int)$sensor->getReportTime(),
-                        "sensorId" => $sensor->getSensorId(),
-                        "values" => (object)$valueOutput
-                    );
-
                 }
-
-                header('Content-Type: application/json');
-                echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
-
             }
+
+            header('Content-Type: application/json');
+            echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
+
+        }
+
     }
     else
     {
@@ -163,12 +204,14 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
             $duration_time = $to_time - $from_time;
         }
 
+        $endAt = $from_time + $duration_time;
+
         //echo $from_time;
 
         if($measure == "allMeasures" )
         {
             $sensorRepository = new SensorRepository();
-            $allSensors = $sensorRepository->getAllSensorsByTime($from_time,$duration_time,$date);
+            $allSensors = $sensorRepository->getAllSensors();
 
             if($allSensors == null)
             {
@@ -177,23 +220,60 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
             else {
                 $output = null;
                 foreach ($allSensors as $sensor) {
-                    $values = $sensorRepository->getSensorValues($sensor);
-                    $sensor->setSensorValues($values);
+                    $dateList = $sensorRepository->getDates();
 
-                    $valueOutput = null;
-                    foreach ($sensor->getSensorValues() as $value) {
-                        $key = $value->getMeasureName();
-                        $valueOutput[$key] = (double)$value->getDataValue();
+                    foreach($dateList as $day)
+                    {
+                        $times = $sensorRepository->getTimesByDate($day);
+                        foreach($times as $time)
+                        {
+                            $values = $sensorRepository->getSensorValuesByDateTime($sensor,$day,$time);
+                            $sensor->setSensorValues($values);
+                            if($sensor->getSensorValues() != null)
+                            {
+                                $valueOutput = null;
+                                foreach($sensor->getSensorValues() as $value)
+                                {
+                                    $key = $value->getMeasureName();
 
+                                    $reportTime = $value->getReportTime();
+
+
+                                        if( ($reportTime <= $endAt) && ($reportTime >= $from_time))
+                                        {
+                                            $valueOutput[$key] = (double)$value->getDataValue();
+                                        }
+
+                                }
+
+                                if($valueOutput != null)
+                                {
+                                    if($date != null)
+                                    {
+                                        if($day == $date)
+                                        {
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                        }
+                                    }
+                                    else
+                                    {
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                    }
+                                }
+                            }
+
+                        }
                     }
-
-                    $output[] = array(
-                        "date" => $sensor->getReportDate(),
-                        "time" => (int)$sensor->getReportTime(),
-                        "sensorId" => $sensor->getSensorId(),
-                        "values" => (object)$valueOutput
-                    );
-
                 }
 
                 header('Content-Type: application/json');
@@ -202,72 +282,83 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
             }
 
         }
+
         else
         {
-            $measureRepository = new MeasureRepository();
-            $sensorValueRepository = new SensorValueRepository();
+
             $sensorRepository = new SensorRepository();
-            $m = $measureRepository->getMeasureByName($measure);
-            $sensorValues = $sensorValueRepository->getAllSensorValueByMeasure($m);
-            $output = null;
-            $sensors = null;
+            $allSensors = $sensorRepository->getAllSensors();
 
-
-            if($sensorValues != null)
+            if($allSensors == null)
             {
-                foreach($sensorValues as $sensorValue)
-                {
-                    $sensor = $sensorRepository->getSensorByValueTime($from_time,$duration_time,$date,$sensorValue);
-                    if($sensor != null)
-                    {
-                        $sensors[] = $sensor;
-                    }
+                echo "no data found during the time period...";
+            }
+            else {
+                $output = null;
+                foreach ($allSensors as $sensor) {
+                    $dateList = $sensorRepository->getDates();
 
-                }
-                if($sensors != null)
-                {
-                    foreach($sensors as $sensor)
+                    foreach($dateList as $day)
                     {
-                        $values = $sensorRepository->getSensorValues($sensor);
-                        $sensor->setSensorValues($values);
 
-                        $valueOutput = null;
-                        foreach ($sensor->getSensorValues() as $value)
+                        $times = $sensorRepository->getTimesByDate($day);
+                        foreach($times as $time)
                         {
-                            $key = $value->getMeasureName();
-                            if($key == $measure)
+                            $values = $sensorRepository->getSensorValuesByDateTime($sensor,$day,$time);
+                            $sensor->setSensorValues($values);
+                            if($sensor->getSensorValues() != null)
                             {
-                               $valueOutput[$key] = (double)$value->getDataValue();
+                                $valueOutput = null;
+                                foreach($sensor->getSensorValues() as $value)
+                                {
+                                    $key = $value->getMeasureName();
+
+                                    $reportTime = $value->getReportTime();
+
+
+                                    if( ($reportTime <= $endAt) && ($reportTime >= $from_time) && ($key == $measure) )
+                                    {
+                                        $valueOutput[$key] = (double)$value->getDataValue();
+                                    }
+
+                                }
+
+                                if($valueOutput != null)
+                                {
+                                    if($date != null)
+                                    {
+
+                                        if($day == $date)
+                                        {
+                                            $output[] = array(
+                                                "date" => $day,
+                                                "time" => (int)$time,
+                                                "sensorId" => $sensor->getSensorId(),
+                                                "values" => (object)$valueOutput
+                                            );
+                                        }
+                                    }
+                                    else
+                                    {
+
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                    }
+                                }
                             }
 
                         }
-                        if($valueOutput !=null)
-                        {
-                            $output[] = array(
-                                "date" => $sensor->getReportDate(),
-                                "time" => (int)$sensor->getReportTime(),
-                                "sensorId" => $sensor->getSensorId(),
-                                "values" => (object)$valueOutput
-                            );
-                        }
-                        else
-                        {
-                            $output = 'no data found...';
-                        }
-
                     }
                 }
+
+                header('Content-Type: application/json');
+                echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
+
             }
-            else
-            {
-                $output = 'no data found...';
-            }
-            if($output == null)
-            {
-                $output = 'no data found...';
-            }
-            header('Content-Type: application/json');
-            echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
 
             
         }
@@ -281,6 +372,8 @@ $app->get('/:streamId/values/:measure/', function ($streamId,$measure) use ($app
 
 });
 
+
+// continuing...
 $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,$sensorId) use ($app) {
     date_default_timezone_set('Australia/Melbourne');
     if($streamId == 0) {
@@ -310,35 +403,79 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
             $duration_time = $to_time - $from_time;
         }
 
+        $endAt = $from_time + $duration_time;
+
         if($measure == "allMeasures")
         {
+
             $sensorRepository = new SensorRepository();
-            $sensorValueRepository = new SensorValueRepository();
-            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$date,$sensorId);
-            if($sensor != null) {
-                $values = $sensorValueRepository->getAllSensorValueBySensor($sensor);
-                $sensor->setSensorValues($values);
+            $allSensors = $sensorRepository->getAllSensors();
 
-                $valueOutput = null;
-                foreach ($sensor->getSensorValues() as $value) {
-                    $key = $value->getMeasureName();
-                    $valueOutput[$key] = (double)$value->getDataValue();
+            if($allSensors == null)
+            {
+                echo "no data found during the time period...";
+            }
+            else {
+                $output = null;
+                   $sensor = $sensorRepository->getSensorById($sensorId);
+                    $dateList = $sensorRepository->getDates();
+                    foreach($dateList as $day)
+                    {
+                        $times = $sensorRepository->getTimesByDate($day);
+                        foreach($times as $time)
+                        {
+                            $values = $sensorRepository->getSensorValuesByDateTime($sensor,$day,$time);
+                            $sensor->setSensorValues($values);
+                            if($sensor->getSensorValues() != null)
+                            {
+                                $valueOutput = null;
+                                foreach($sensor->getSensorValues() as $value)
+                                {
+                                    $key = $value->getMeasureName();
 
-                }
+                                    $reportTime = $value->getReportTime();
 
-                $output[] = array(
-                    "date" => $sensor->getReportDate(),
-                    "time" => (int)$sensor->getReportTime(),
-                    "sensorId" => $sensor->getSensorId(),
-                    "values" => (object)$valueOutput
-                );
+
+                                    if( ($reportTime <= $endAt) && ($reportTime >= $from_time))
+                                    {
+                                        $valueOutput[$key] = (double)$value->getDataValue();
+                                    }
+
+                                }
+
+                                if($valueOutput != null)
+                                {
+                                    if($date != null)
+                                    {
+                                        if($day == $date)
+                                        {
+                                            $output[] = array(
+                                                "date" => $day,
+                                                "time" => (int)$time,
+                                                "sensorId" => $sensor->getSensorId(),
+                                                "values" => (object)$valueOutput
+                                            );
+                                        }
+                                    }
+                                    else
+                                    {
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+
 
                 header('Content-Type: application/json');
                 echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
-            }
-            else
-            {
-                echo 'no data found...';
+
             }
         }
         else if($measure == "allMeasure")
@@ -348,49 +485,79 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
 
         else
         {
+
             $sensorRepository = new SensorRepository();
-            $measureRepository = new MeasureRepository();
-            $sensorValueRepository = new SensorValueRepository();
-            $sensor = $sensorRepository->getSensorByIdTime($from_time,$duration_time,$date,$sensorId);
-            if($sensor != null)
+            $allSensors = $sensorRepository->getAllSensors();
+
+            if($allSensors == null)
             {
-                $m = $measureRepository->getMeasureByName($measure);
-                $values = $sensorValueRepository->getAllSensorValueBySensorMeasure($sensor,$m);
-                $sensor->setSensorValues($values);
-
-                if($sensor->getSensorValues() != null)
-                {
-                    foreach ($sensor->getSensorValues() as $value)
-                    {
-                        $key = $value->getMeasureName();
-                        if($key == $measure)
-                        {
-                            $valueOutput[$key] = (double)$value->getDataValue();
-                        }
-
-                    }
-                    if($valueOutput !=null)
-                    {
-                        $output[] = array(
-                            "date" => $sensor->getReportDate(),
-                            "time" => (int)$sensor->getReportTime(),
-                            "sensorId" => $sensor->getSensorId(),
-                            "values" => (object)$valueOutput
-                        );
-                        header('Content-Type: application/json');
-                        echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
-                    }
-                }
-                else
-                {
-                    echo 'no data found...';
-                }
-
-
+                echo "no data found during the time period...";
             }
-            else
-            {
-                echo 'no data found...';
+            else {
+                $output = null;
+                $sensor = $sensorRepository->getSensorById($sensorId);
+                    $dateList = $sensorRepository->getDates();
+
+                    foreach($dateList as $day)
+                    {
+
+                        $times = $sensorRepository->getTimesByDate($day);
+                        foreach($times as $time)
+                        {
+                            $values = $sensorRepository->getSensorValuesByDateTime($sensor,$day,$time);
+                            $sensor->setSensorValues($values);
+                            if($sensor->getSensorValues() != null)
+                            {
+                                $valueOutput = null;
+                                foreach($sensor->getSensorValues() as $value)
+                                {
+                                    $key = $value->getMeasureName();
+
+                                    $reportTime = $value->getReportTime();
+
+
+                                    if( ($reportTime <= $endAt) && ($reportTime >= $from_time) && ($key == $measure) )
+                                    {
+                                        $valueOutput[$key] = (double)$value->getDataValue();
+                                    }
+
+                                }
+
+                                if($valueOutput != null)
+                                {
+                                    if($date != null)
+                                    {
+
+                                        if($day == $date)
+                                        {
+                                            $output[] = array(
+                                                "date" => $day,
+                                                "time" => (int)$time,
+                                                "sensorId" => $sensor->getSensorId(),
+                                                "values" => (object)$valueOutput
+                                            );
+                                        }
+                                    }
+                                    else
+                                    {
+
+                                        $output[] = array(
+                                            "date" => $day,
+                                            "time" => (int)$time,
+                                            "sensorId" => $sensor->getSensorId(),
+                                            "values" => (object)$valueOutput
+                                        );
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+
+
+                header('Content-Type: application/json');
+                echo json_encode($output, JSON_PRETTY_PRINT, JSON_FORCE_OBJECT);
+
             }
         }
 
@@ -403,9 +570,11 @@ $app->get('/:streamId/values/:measure/:sensorId/', function ($streamId,$measure,
 
 });
 
-$app->post('/json',function()
+$app->post('/json',function() use($app)
 {
-    $json = $_POST;
+    $json = json_decode($app->request->getBody(),true);
+
+
 
     foreach($json as $obj)
     {
@@ -413,15 +582,52 @@ $app->post('/json',function()
         $sensor->setSensorId($obj['sensorId']);
         $sensor->setLatitude($obj['yCoord']);
         $sensor->setLongitude($obj['xCoord']);
-        $sensor->setReportDate($obj['date']);
-        $sensor->setReportTime($obj['time']);
+        $reportDate = $obj['date'];
+        $reportTime = $obj['time'];
+
 
         $sensorRepository = new SensorRepository();
         $flag = $sensorRepository->getSensorById($sensor->getSensorId());
+       // echo "hellp";
 
         if($flag != null)
         {
-            echo json_encode("sorry, sensorId: ".$sensor->getSensorId()." is not unique in the database");
+            $sensorId = $flag->getSensorId();
+            foreach($obj['values'] as $key => $value)
+            {
+                $measureRepository = new MeasureRepository();
+                $sensorValueRepository = new SensorValueRepository();
+                $measure = $measureRepository->getMeasureByName($key);
+                if($measure != null)
+                {
+                    $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensorId,$measure->getId(),$value,$reportDate,$reportTime);
+                    if(!$valueInsertSuccess)
+                    {
+                        echo 'Mysql Error when inserting data value, please check the query';
+                    }
+
+                }
+                else if($measure == null)
+                {
+                    $measureInsert = $measureRepository->insertMeasure($key);
+                    if(!$measureInsert)
+                    {
+                        echo 'Mysql Error when inserting data value, please check the query';
+                    }
+                    else
+                    {
+                        $newMeasure = $measureRepository->getMeasureByName($key);
+                        $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensorId,$newMeasure->getId(),$value,$reportDate,$reportTime);
+                        if(!$valueInsertSuccess)
+                        {
+                            echo 'Mysql Error when inserting data value, please check the query';
+                        }
+                    }
+
+
+                }
+            }
+
         }
         else if($flag == null)
         {
@@ -439,7 +645,7 @@ $app->post('/json',function()
                     $measure = $measureRepository->getMeasureByName($key);
                     if($measure != null)
                     {
-                        $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensor->getSensorId(),$measure->getId(),$value);
+                        $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensor->getSensorId(),$measure->getId(),$value,$reportDate,$reportTime);
                         if(!$valueInsertSuccess)
                         {
                             echo 'Mysql Error when inserting data value, please check the query';
@@ -456,7 +662,7 @@ $app->post('/json',function()
                         else
                         {
                             $newMeasure = $measureRepository->getMeasureByName($key);
-                            $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensor->getSensorId(),$newMeasure->getId(),$value);
+                            $valueInsertSuccess = $sensorValueRepository->insertSensorValue($sensor->getSensorId(),$newMeasure->getId(),$value,$reportDate,$reportTime);
                             if(!$valueInsertSuccess)
                             {
                                 echo 'Mysql Error when inserting data value, please check the query';

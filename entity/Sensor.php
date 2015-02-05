@@ -11,8 +11,6 @@ class Sensor
     private $sensorId;
     private $longitude;
     private $latitude;
-    private $reportDate;
-    private $reportTime;
     private $sensorValues;
 
     public function __construct()
@@ -69,40 +67,6 @@ class Sensor
     {
         $this->latitude = $latitude;
     }
-
-    /**
-     * @return mixed
-     */
-    public function getReportDate()
-    {
-        return $this->reportDate;
-    }
-
-    /**
-     * @param mixed $reportDate
-     */
-    public function setReportDate($reportDate)
-    {
-        $this->reportDate = $reportDate;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getReportTime()
-    {
-        return $this->reportTime;
-    }
-
-    /**
-     * @param mixed $reportTime
-     */
-    public function setReportTime($reportTime)
-    {
-        $this->reportTime = $reportTime;
-    }
-
-
 
     /**
      * @return mixed

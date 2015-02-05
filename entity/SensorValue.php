@@ -12,6 +12,8 @@ class SensorValue
     private $measureId;
     private $dataValue;
     private $measureName;
+    private $reportDate;
+    private $reportTime;
 
     /**
      * @return mixed
@@ -77,6 +79,37 @@ class SensorValue
         $this->dataValue = $dataValue;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getReportDate()
+    {
+        return $this->reportDate;
+    }
+
+    /**
+     * @param mixed $reportDate
+     */
+    public function setReportDate($reportDate)
+    {
+        $this->reportDate = $reportDate;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReportTime()
+    {
+        return $this->reportTime;
+    }
+
+    /**
+     * @param mixed $reportTime
+     */
+    public function setReportTime($reportTime)
+    {
+        $this->reportTime = $reportTime;
+    }
 
 
 }
